@@ -1,5 +1,7 @@
 #include "queue.c"
 #include "hashmap.c"
+#include <pthread.h>    
+#include <semaphore.h>  
 sem_t mutex;
 int counter; /* shared variable */
 
@@ -47,7 +49,6 @@ void push_queue() {
                 char *client = (char*)malloc(sizeof(char)*10);
                 strcpy(client, line);
                 Enqueue(client);
-                Print();
             }
             
         }
@@ -59,7 +60,7 @@ void push_queue() {
 
 char* readFile(char* name) {
     FILE *fp = fopen(name, "r");
-    char *result = (char*)malloc(sizeof(char)*10);
+    char *result = (char*)malloc(100);
     if(fp != NULL)
     {
         char line[50];
@@ -73,7 +74,7 @@ char* readFile(char* name) {
         }
         fclose(fp);
     } else {
-        perror("client3.in");
+        perror("no such file");
     }
     return result;
 }
@@ -96,26 +97,30 @@ void* func ( void * ptr )
 {
     int x = ptr;
     
-    sem_wait(&mutex);       //Down semaphore
-    //begin critical sectin
     while(front != NULL) {
-        char client[10] = ""; 
-        strcpy(Front());
+        sem_wait(&mutex);       //Down semaphore
+    //begin critical sectin
+        char client[20] = ""; 
+        strcpy(client, Front());
+        client[strlen(client)-1] = 0;
         Dequeue();
+        sem_post(&mutex);       // up semaphore 
         printf("THREAD %d is handling client %s \n", x, client);
-        char city[10] = readFile(client);
+        char city[20] = "";
+        strcpy(city, readFile(client));
+        city[strlen(city)-1] = 0;
         struct nlist* result = lookup(city);
-        char content[20] = result->defn;
-        char output[10] = "";
+        char content[50] = "";
+        strcpy(content, result->defn);
+        char output[20] = "";
         strcpy(output, client);
         strcat(output, ".result");
         writeFile(output, content);
-    }
+        printf("THREAD %d finished handling client %s \n", x, client);
     //end critical section
 
-    printf("THREAD %d finished handling client %s \n", x, client);
-    sem_post(&mutex);       // up semaphore 
     
+    }
     pthread_exit(0); /* exit thread */
 }
 
@@ -125,7 +130,7 @@ void run() {
     
     sem_init(&mutex, 0, 1);      /* initialize mutex to 1 - binary semaphore */
                                  /* second param = 0 - semaphore is local */
-        n=3;                         
+        n=2;                         
 	/*if (argc != 2)
 	{
 		printf("Usage: %s n\n  where n is no. of thread\n", argv[0]);
