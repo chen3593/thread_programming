@@ -23,6 +23,16 @@ void Enqueue(char* x) {
 	rear = temp;
 }
 
+int Size() {
+	struct Node* temp = front;
+    int count = 0;
+    while(temp != NULL) {
+        temp = temp->next;
+        count++;
+    }
+    return count;
+}
+
 // To Dequeue an str
 void Dequeue() {
 	struct Node* temp = front;
@@ -64,4 +74,6 @@ void Print() {
 //	Enqueue("c"); Print();
 //	Dequeue();  Print();
 //	Enqueue("d"); Print();
+//    int size = Size();
+//    printf("%d\n", size);
 //}
